@@ -1,0 +1,46 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: less-one
+  namespace: homework
+spec:
+  initContainers:
+  - name: init-html-gen
+    image: busybox:1.36
+    command:
+      - /bin/sh
+      - -c
+      - |
+        echo "<h1>Hello from init-container</h1>" > /init/index.html
+        echo "File created at: $(date)" >> /init/index.html
+        ls -la /init/
+    volumeMounts:
+    - name: homework-volume
+      mountPath: /init
+
+  containers:
+  - name: web-server
+    image: python:3.14.3-alpine
+    command:
+      - /bin/sh
+      - -c
+      - |
+        cd /homework
+        python -m http.server 8000 # open 8000 python web
+    ports:
+    - containerPort: 8000
+    volumeMounts:
+    - name: homework-volume
+      mountPath: /homework
+    lifecycle:
+      preStop:
+        exec:
+          command:
+            - /bin/sh
+            - -c
+            - |
+              rm -f /homework/index.html
+              ls -la /homework/ || true
+  volumes:
+  - name: homework-volume
+    emptyDir: {}
