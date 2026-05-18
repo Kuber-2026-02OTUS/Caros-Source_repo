@@ -1,0 +1,8 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: minikube-hostpath-retain
+provisioner: k8s.io/minikube-hostpath
+#provisioner: https://k8s.io/minikube-hostpath - Так не работает
+reclaimPolicy: Retain
+allowVolumeExpansion: true
