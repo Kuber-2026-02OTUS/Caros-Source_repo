@@ -3,6 +3,7 @@ kind: ConfigMap
 metadata:
   name: homework-config
 data:
-  LOGIN: MEGALOGIN
-  PASSWORD: PUpERPassW0rD
-  SECRET_VALUE: Utka_and_Banan
+  file: |
+    LOGIN=MEGALOGIN
+    PASSWORD=PUpERPassW0rD
+    SECRET_VALUE=Utka_and_Banan
