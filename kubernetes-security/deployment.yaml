@@ -1,0 +1,75 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: less-four
+  namespace: homework
+  labels:
+    app: homework
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1        # при обновлении может быть недоступен максимум 1 под
+  selector:
+    matchLabels:
+      app: homework
+  template:
+    metadata:
+      labels:
+        app: homework
+    spec:
+      serviceAccountName: monitoring
+      nodeSelector:
+        homework: "true"
+      initContainers:
+      - name: init-html-gen
+        image: busybox:1.36
+        command:
+          - /bin/sh
+          - -c
+          - |
+            echo "<h1>Hello from init-container</h1>" > /init/index.html
+            echo "File created at: $(date)" >> /init/index.html
+            ls -la /init/
+        volumeMounts:
+        - name: homework-volume
+          mountPath: /init
+      containers:
+      - name: web-server
+        image: python:3.14.3-alpine
+        command:
+          - /bin/sh
+          - -c
+          - |
+            cd /homework
+            python -m http.server 8000 # open 8000 python web
+        readinessProbe:
+            httpGet:
+              path: /index.html
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 5
+        ports:
+          - containerPort: 8000
+        volumeMounts:
+          - name: homework-volume
+            mountPath: /homework
+          - name: config-volume
+            mountPath: /homework/conf
+        lifecycle:
+          preStop:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  rm -f /homework/index.html
+                  ls -la /homework/ || true
+      volumes:
+      - name: homework-volume
+        persistentVolumeClaim:
+          claimName: homework-pvc
+      - name: config-volume
+        configMap:
+          name: homework-config
